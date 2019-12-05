@@ -1,43 +1,7 @@
 import React from 'react';
-import styled from 'styled-components';
-
-const DECEMBER = [
-  { day: 'SUNDAY', number: 1, isInMonth: true },
-  { day: 'MONDAY', number: 2, isInMonth: true },
-  { day: 'TUESDAY', number: 3, isInMonth: true },
-  { day: 'WEDNESDAY', number: 4, isInMonth: true },
-  { day: 'THURSDAY', number: 5, isInMonth: true },
-  { day: 'FRIDAY', number: 6, isInMonth: true },
-  { day: 'SATURDAY', number: 7, isInMonth: true },
-  { day: 'SUNDAY', number: 8, isInMonth: true },
-  { day: 'MONDAY', number: 9, isInMonth: true },
-  { day: 'TUESDAY', number: 10, isInMonth: true },
-  { day: 'WEDNESDAY', number: 11, isInMonth: true },
-  { day: 'THURSDAY', number: 12, isInMonth: true },
-  { day: 'FRIDAY', number: 13, isInMonth: true },
-  { day: 'SATURDAY', number: 14, isInMonth: true },
-  { day: 'SUNDAY', number: 15, isInMonth: true },
-  { day: 'MONDAY', number: 16, isInMonth: true },
-  { day: 'TUESDAY', number: 17, isInMonth: true },
-  { day: 'WEDNESDAY', number: 18, isInMonth: true },
-  { day: 'THURSDAY', number: 19, isInMonth: true },
-  { day: 'FRIDAY', number: 20, isInMonth: true },
-  { day: 'SATURDAY', number: 21, isInMonth: true },
-  { day: 'SUNDAY', number: 22, isInMonth: true },
-  { day: 'MONDAY', number: 23, isInMonth: true },
-  { day: 'TUESDAY', number: 24, isInMonth: true },
-  { day: 'WEDNESDAY', number: 25, isInMonth: true },
-  { day: 'THURSDAY', number: 26, isInMonth: true },
-  { day: 'FRIDAY', number: 27, isInMonth: true },
-  { day: 'SATURDAY', number: 28, isInMonth: true },
-  { day: 'SUNDAY', number: 29, isInMonth: true },
-  { day: 'MONDAY', number: 30, isInMonth: true },
-  { day: 'TUESDAY', number: 31, isInMonth: true },
-  { day: 'WEDNESDAY', number: 1, isInMonth: false },
-  { day: 'THURSDAY', number: 2, isInMonth: false },
-  { day: 'FRIDAY', number: 3, isInMonth: false },
-  { day: 'SATURDAY', number: 4, isInMonth: false }
-];
+import styled, { css } from 'styled-components';
+import moment from 'moment';
+import * as R from 'ramda';
 
 const DAY_NAMES = [
   'Sunday',
@@ -64,7 +28,27 @@ const Content = styled.div`
   flex-wrap: wrap;
 `;
 
-const DateBox = styled.div`
+const Date = styled.div`
+  margin: 4px;
+  padding: 4px;
+
+  color: ${props => (props.isInMonth ? '#000' : '#b3b3b3')};
+
+  ${props =>
+    props.isToday &&
+    css`
+      height: 18px;
+      width: 18px;
+
+      text-align: center;
+
+      border-radius: 50%;
+      background-color: red;
+      color: white;
+    `}
+`;
+
+const Box = styled.div`
   flex: 0 0 auto;
 
   width: 100px;
@@ -72,12 +56,17 @@ const DateBox = styled.div`
   box-sizing: border-box;
 
   border: 1px solid black;
-
-  padding: 5px 0 0 5px;
-
-  font-size: 15px;
-  color: ${props => (props.isInMonth ? '#000' : '#b3b3b3')};
 `;
+
+function DateBox({ isInMonth, isToday, children }) {
+  return (
+    <Box>
+      <Date isInMonth={isInMonth} isToday={isToday}>
+        {children}
+      </Date>
+    </Box>
+  );
+}
 
 const Day = styled.div`
   display: inline-block;
@@ -91,16 +80,41 @@ const Day = styled.div`
   font-size: 15px;
 `;
 
+function generateDays() {
+  const today = moment().startOf('day');
+  const start = moment()
+    .startOf('month')
+    .startOf('week');
+  const end = moment()
+    .endOf('month')
+    .endOf('week');
+  const startOfMonth = moment().startOf('month');
+  const endOfMonth = moment().endOf('month');
+
+  const days = R.unfold(
+    date => (date.isAfter(end) ? false : [date.clone(), date.add(1, 'days')]),
+    start
+  );
+
+  return days.map(day => ({
+    number: day.date(),
+    isToday: day.isSame(today),
+    isInMonth: day.isBetween(startOfMonth, endOfMonth, null, '[]'),
+    ISOString: day.toISOString()
+  }));
+}
+
 export default function() {
+  const days = generateDays();
   return (
     <div>
       <Title>December 2019</Title>
       {DAY_NAMES.map(name => (
-        <Day>{name}</Day>
+        <Day key={name}>{name}</Day>
       ))}
       <Content>
-        {DECEMBER.map(({ number, isInMonth }) => (
-          <DateBox key={Math.random()} isInMonth={isInMonth}>
+        {days.map(({ number, isInMonth, isToday, ISOString }) => (
+          <DateBox key={ISOString} isInMonth={isInMonth} isToday={isToday}>
             {number}
           </DateBox>
         ))}
